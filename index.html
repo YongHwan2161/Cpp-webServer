@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    <label id="clock" style="color: green; display: inline-block;"></label><br />
+    <label id="contents"></label><br/>
+    <textarea id="textinput" cols="60"></textarea>    
+    <button id="myButton" onclick="sendTextToServer()">Enter</button><br />
+    <script>
+    // 변수 선언을 let으로 변경
+    let user = 0;
+    let node = 0;
+    let ch = 0;
+
+    // clock 함수를 전역 스코프로 이동
+    function clock() {
+        const clockElement = document.getElementById("clock");
+        if (clockElement) {
+            clockElement.textContent = new Date().toLocaleTimeString();
+        }
+    }
+
+    window.onload = function () {
+        console.log('페이지가 처음 로드되었습니다.');
+        clock();
+        // 1초마다 clock 함수 실행
+        setInterval(clock, 1000);
+
+        // 이 부분은 버튼 클릭 이벤트 핸들러 내부나 다른 적절한 곳에 배치해야 할 수도 있습니다.
+        sendTextToServer();
+    };
+
+// 이 함수 외부에서 user, node, ch 변수가 선언되어 있어야 합니다.
+function sendTextToServer() {
+    const textInputElement = document.getElementById("textinput");
+    if (textInputElement) {
+        const textInputValue = textInputElement.value.trim();
+        console.log('입력된 텍스트: ', textInputValue);
+        
+        // 입력값 검증
+        if (textInputValue) {
+            const text = `${user}\t${node}\t${ch}\t${textInputValue}`;
+            console.log('text: ', text);
+
+            fetch('https://1e0a728c-d0e0-469d-b5b9-d97db39156bd-00-1hhqpb8v0x28s.sisko.repl.co/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain; charset=utf-8'
+                },
+                body: text
+            })
+            .then(response => {
+                console.log('response: ', response);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(data => {
+                console.log('data: ', data);
+                const res = data.split('\t');
+                user = res[0];
+                node = res[1];
+                ch = res[2];
+                const contentsElement = document.getElementById("contents");
+                if (contentsElement) {
+                    contentsElement.style.display = "inline-block";
+                    contentsElement.style.maxWidth = "500px";
+                    contentsElement.style.overflowWrap = "break-word";
+                    contentsElement.textContent = `user = ${res[0]} ${res[3]}`; // XSS 취약점 방지를 위해 textContent 사용
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+            });
+        }
+    }
+}
+
+</script>
+
+
+</body>
+</html>
